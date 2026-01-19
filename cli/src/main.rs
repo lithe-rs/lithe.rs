@@ -6,6 +6,8 @@ use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use std::{thread, time::Duration};
 
+mod init;
+
 #[derive(Serialize, Deserialize)]
 struct AppConfig {
     version: u8,
@@ -31,6 +33,8 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    #[command(about = "Initializes a new lithe project")]
+    Init,
     #[command(about = "Starts the main application process")]
     Run {
         #[arg(short, long, help = "Print verbose logs")]
@@ -48,6 +52,9 @@ fn main() -> Result<()> {
         confy::load("lithe-cli", "config").context("Failed to load configuration")?;
 
     match args.command {
+        Commands::Init => {
+            init::handle_init()?;
+        }
         Commands::Config => {
             println!("Current Configuration:");
             println!("  Version: {}", cfg.version);
