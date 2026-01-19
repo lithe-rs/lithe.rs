@@ -10,7 +10,6 @@ Recommended Crate Stack
 | **UI/UX** | `indicatif` & `dialoguer` | Adds progress bars, spinners, and interactive prompts. |
 | **Logging** | `env_logger` & `log` | Configurable logging levels via environment variables. |
 
-
 Distribution Strategy
 
 We use the **Native Binary Wrapper** strategy. This allows users to run `npm install -g lithe-cli` and get a working binary immediately, avoiding local compilation or fragile post-install scripts.
