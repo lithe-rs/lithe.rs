@@ -5,3 +5,5 @@ edition = "2024"
 
 [dependencies]
 lithe = { path = "../../crates/lithe" }
+axum = "0.7"
+tokio = { version = "1", features = ["full"] }
