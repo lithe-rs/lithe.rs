@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
-use dialoguer::{Confirm, theme::ColorfulTheme};
+use dialoguer::{theme::ColorfulTheme, Confirm};
 use indicatif::{ProgressBar, ProgressStyle};
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
@@ -42,6 +42,18 @@ enum Commands {
     },
     #[command(about = "Shows the current configuration")]
     Config,
+    #[command(about = "Starts the development server with hot reloading")]
+    Dev {
+        #[arg(short, long, default_value_t = 3000)]
+        port: u16,
+    },
+    #[command(about = "Builds the project for production")]
+    Build {
+        #[arg(short, long, help = "Build a standalone embedded binary")]
+        bin: bool,
+        #[arg(short, long, help = "Output directory", default_value = "dist")]
+        out_dir: String,
+    },
 }
 
 fn main() -> Result<()> {
@@ -61,6 +73,18 @@ fn main() -> Result<()> {
             println!("  API Key: {}", cfg.api_key);
             let location = confy::get_configuration_file_path("lithe-cli", "config")?;
             println!("  Location: {:?}", location);
+        }
+        Commands::Dev { port } => {
+            info!("Starting development server on port {}...", port);
+            // TODO: Implement watcher and dev server
+        }
+        Commands::Build { bin, out_dir } => {
+            if bin {
+                info!("Building embedded binary to {}...", out_dir);
+            } else {
+                info!("Building static site to {}...", out_dir);
+            }
+            // TODO: Implement build logic
         }
         Commands::Run { verbose } => {
             if verbose {

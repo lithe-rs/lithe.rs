@@ -19,7 +19,7 @@ pub fn handle_init() -> Result<()> {
         .default(".".to_string())
         .interact_text()?;
 
-    let backends = vec!["Rust", "None", "Go", "Typescript", "Python"];
+    let backends = vec!["Rust"];
     let backend_idx = Select::with_theme(&theme)
         .with_prompt("Select a backend")
         .items(&backends)
@@ -94,8 +94,19 @@ pub fn handle_init() -> Result<()> {
 
     pb.finish_with_message("Done!");
 
+    // Create required directories for Lithe.rs
+    let pages_dir = target_path.join("src").join("pages");
+    let public_dir = target_path.join("public");
+
+    if !pages_dir.exists() {
+        fs::create_dir_all(&pages_dir).context("Failed to create src/pages directory")?;
+    }
+    if !public_dir.exists() {
+        fs::create_dir_all(&public_dir).context("Failed to create public directory")?;
+    }
+
     info!(
-        "Project initialized successfully with {} files!",
+        "Project initialized successfully with {} files and Lithe.rs structure!",
         files_written
     );
 
