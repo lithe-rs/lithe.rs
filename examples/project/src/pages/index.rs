@@ -8,4 +8,5 @@ pub fn page() -> impl Component {
             "This page was generated via FS routing. Go to /about to see another page.",
         ))
         .with_child(a().set_attribute("href", "/about").with_child("About"))
+        .with_child(a().set_attribute("href", "/contact").with_child("Contact"))
 }
