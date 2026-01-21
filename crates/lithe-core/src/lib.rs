@@ -57,6 +57,38 @@ impl Component for Box<dyn Component> {
     }
 }
 
+impl<T: Component> Component for Vec<T> {
+    fn render(&self, buf: &mut String) {
+        for item in self {
+            item.render(buf);
+        }
+    }
+}
+
+impl<T: Component> Component for &Vec<T> {
+    fn render(&self, buf: &mut String) {
+        for item in *self {
+            item.render(buf);
+        }
+    }
+}
+
+impl<T: Component, const N: usize> Component for [T; N] {
+    fn render(&self, buf: &mut String) {
+        for item in self {
+            item.render(buf);
+        }
+    }
+}
+
+impl<T: Component> Component for Option<T> {
+    fn render(&self, buf: &mut String) {
+        if let Some(inner) = self {
+            inner.render(buf);
+        }
+    }
+}
+
 pub struct HtmlPage {
     pub title: String,
     pub body: Box<dyn Component>,
