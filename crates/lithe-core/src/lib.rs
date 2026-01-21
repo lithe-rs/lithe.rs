@@ -1,3 +1,7 @@
+mod element;
+
+pub use element::Element;
+pub use element::VoidElement;
 pub trait Component {
     fn render(&self, buf: &mut String);
 }
