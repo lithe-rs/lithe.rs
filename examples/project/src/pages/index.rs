@@ -1,4 +1,4 @@
-use lithe::{Component, Element, div, h1, p};
+use lithe::{div, h1, p, Component, Element};
 
 pub fn page() -> impl Component {
     div()
