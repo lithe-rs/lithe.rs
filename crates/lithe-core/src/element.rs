@@ -1,33 +1,23 @@
 use crate::Component;
 
-pub struct Element {
+struct TagHead {
     tag: String,
     attributes: Vec<(String, String)>,
-    children: Vec<Box<dyn Component>>,
 }
 
-impl Element {
+impl TagHead {
     fn new(tag: &str) -> Self {
-        Element {
+        TagHead {
             tag: tag.to_string(),
             attributes: Vec::new(),
-            children: Vec::new(),
         }
     }
 
-    fn set_attribute(mut self, key: &str, value: &str) -> Self {
+    fn push_attribute(&mut self, key: &str, value: &str) {
         self.attributes.push((key.to_string(), value.to_string()));
-        self
     }
 
-    fn child<C: Component + 'static>(mut self, child: C) -> Self {
-        self.children.push(Box::new(child));
-        self
-    }
-}
-
-impl Component for Element {
-    fn render(&self, buf: &mut String) {
+    fn render_open(&self, buf: &mut String) {
         buf.push('<');
         buf.push_str(&self.tag);
         for (key, value) in &self.attributes {
@@ -38,31 +28,9 @@ impl Component for Element {
             buf.push('"');
         }
         buf.push('>');
-        for child in &self.children {
-            child.render(buf);
-        }
-        buf.push_str("</");
-        buf.push_str(&self.tag);
-        buf.push('>');
     }
-}
 
-pub struct VoidElement {
-    tag: String,
-    attributes: Vec<(String, String)>,
-}
-
-impl VoidElement {
-    fn new(tag: &str) -> Self {
-        VoidElement {
-            tag: tag.to_string(),
-            attributes: Vec::new(),
-        }
-    }
-}
-
-impl Component for VoidElement {
-    fn render(&self, buf: &mut String) {
+    fn render_self_closing(&self, buf: &mut String) {
         buf.push('<');
         buf.push_str(&self.tag);
         for (key, value) in &self.attributes {
@@ -73,6 +41,68 @@ impl Component for VoidElement {
             buf.push('"');
         }
         buf.push_str(" />");
+    }
+
+    fn render_close(&self, buf: &mut String) {
+        buf.push_str("</");
+        buf.push_str(&self.tag);
+        buf.push('>');
+    }
+}
+
+pub struct Element {
+    head: TagHead,
+    children: Vec<Box<dyn Component>>,
+}
+
+impl Element {
+    pub fn new(tag: &str) -> Self {
+        Element {
+            head: TagHead::new(tag),
+            children: Vec::new(),
+        }
+    }
+
+    pub fn set_attribute(mut self, key: &str, value: &str) -> Self {
+        self.head.push_attribute(key, value);
+        self
+    }
+
+    pub fn child<C: Component + 'static>(&mut self, child: C) {
+        self.children.push(Box::new(child));
+    }
+}
+
+impl Component for Element {
+    fn render(&self, buf: &mut String) {
+        self.head.render_open(buf);
+        for child in &self.children {
+            child.render(buf);
+        }
+        self.head.render_close(buf);
+    }
+}
+
+pub struct VoidElement {
+    head: TagHead,
+}
+
+impl VoidElement {
+    pub fn new(tag: &str) -> Self {
+        VoidElement {
+            head: TagHead::new(tag),
+        }
+    }
+
+    pub fn set_attribute(mut self, key: &str, value: &str) -> Self {
+        self.head.push_attribute(key, value);
+        self
+    }
+}
+
+impl Component for VoidElement {
+    fn render(&self, buf: &mut String) {
+        self.head.render_self_closing(buf);
     }
 }
 
