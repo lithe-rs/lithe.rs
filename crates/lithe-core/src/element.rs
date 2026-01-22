@@ -144,6 +144,10 @@ impl VoidElement {
         self.set_attribute("alt", alt)
     }
 
+    pub fn on_click(self, js: &str) -> Self {
+        self.set_attribute("onclick", js)
+    }
+
     pub fn charset(self, charset: &str) -> Self {
         self.set_attribute("charset", charset)
     }
@@ -240,4 +244,8 @@ pub fn meta() -> VoidElement {
 }
 pub fn link() -> VoidElement {
     VoidElement::new("link")
+}
+
+pub fn button() -> Element {
+    Element::new("button")
 }
