@@ -1,11 +1,10 @@
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
-use dialoguer::{Confirm, theme::ColorfulTheme};
-use indicatif::{ProgressBar, ProgressStyle};
-use log::{info, warn};
 use serde::{Deserialize, Serialize};
-use std::{thread, time::Duration};
 
+mod build;
+mod dev;
+mod generate;
 mod init;
 
 #[derive(Serialize, Deserialize)]
@@ -24,8 +23,8 @@ impl Default for AppConfig {
 }
 
 #[derive(Parser)]
-#[command(name = "lithe-cli")]
-#[command(about = "A demonstration of the Rust CLI stack", long_about = None)]
+#[command(name = "lithe")]
+#[command(about = "The Lithe.rs framework CLI", long_about = None)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -39,11 +38,6 @@ enum Commands {
         project_dir: String,
         #[arg(short, long, help = "Template to use", default_value = "Rust")]
         template: String,
-    },
-    #[command(about = "Starts the main application process")]
-    Run {
-        #[arg(short, long, help = "Print verbose logs")]
-        verbose: bool,
     },
     #[command(about = "Shows the current configuration")]
     Config,
@@ -83,51 +77,10 @@ fn main() -> Result<()> {
             println!("  Location: {:?}", location);
         }
         Commands::Dev { port } => {
-            info!("Starting development server on port {}...", port);
-            // TODO: Implement watcher and dev server
+            dev::handle_dev(port)?;
         }
         Commands::Build { bin, out_dir } => {
-            if bin {
-                info!("Building embedded binary to {}...", out_dir);
-            } else {
-                info!("Building static site to {}...", out_dir);
-            }
-            // TODO: Implement build logic
-        }
-        Commands::Run { verbose } => {
-            if verbose {
-                info!("Verbose mode enabled");
-            }
-
-            info!("Starting the application logic...");
-
-            if !Confirm::with_theme(&ColorfulTheme::default())
-                .with_prompt("Do you want to start the heavy process?")
-                .interact()?
-            {
-                warn!("Operation cancelled by user");
-                return Ok(());
-            }
-
-            let pb = ProgressBar::new(100);
-            pb.set_style(
-                ProgressStyle::with_template(
-                    "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}% ({eta})",
-                )
-                .unwrap()
-                .progress_chars("#>-"),
-            );
-
-            for i in 0..100 {
-                if i == 50 {
-                    info!("Halfway there!");
-                }
-                pb.inc(1);
-                thread::sleep(Duration::from_millis(20));
-            }
-
-            pb.finish_with_message("Done!");
-            info!("Process completed successfully.");
+            build::handle_build(bin, &out_dir)?;
         }
     }
 

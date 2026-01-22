@@ -7,3 +7,12 @@ edition = "2024"
 lithe = { path = "../../crates/lithe" }
 axum = "0.7"
 tokio = { version = "1", features = ["full"] }
+
+[[bin]]
+name = "lithe-app"
+path = ".lithe/main.rs"
+
+
+[[bin]]
+name = "lithe-static-builder"
+path = ".lithe/static_builder.rs"

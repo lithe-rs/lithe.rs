@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use dialoguer::{Confirm, Input, Select, theme::ColorfulTheme};
+use dialoguer::{theme::ColorfulTheme, Confirm, Input, Select};
 use indicatif::{ProgressBar, ProgressStyle};
 use log::{info, warn};
 use rust_embed::RustEmbed;
