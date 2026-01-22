@@ -1,10 +1,3 @@
-//! Browser API wrappers that work on WASM and are no-ops on the server.
-//!
-//! This module provides safe wrappers around common browser APIs that can be
-//! called from `#[client]` functions without needing `#[cfg(target_arch = "wasm32")]`.
-
-/// Shows an alert dialog with the given message.
-/// No-op on the server.
 #[inline]
 pub fn alert(message: &str) {
     #[cfg(target_arch = "wasm32")]
@@ -20,8 +13,6 @@ pub fn alert(message: &str) {
     }
 }
 
-/// Logs a message to the browser console.
-/// No-op on the server.
 #[inline]
 pub fn console_log(message: &str) {
     #[cfg(target_arch = "wasm32")]
@@ -34,8 +25,6 @@ pub fn console_log(message: &str) {
     }
 }
 
-/// Logs a warning to the browser console.
-/// No-op on the server.
 #[inline]
 pub fn console_warn(message: &str) {
     #[cfg(target_arch = "wasm32")]
@@ -48,8 +37,6 @@ pub fn console_warn(message: &str) {
     }
 }
 
-/// Logs an error to the browser console.
-/// No-op on the server.
 #[inline]
 pub fn console_error(message: &str) {
     #[cfg(target_arch = "wasm32")]
@@ -62,8 +49,6 @@ pub fn console_error(message: &str) {
     }
 }
 
-/// Returns the current window location href.
-/// Returns None on the server.
 #[inline]
 pub fn location_href() -> Option<String> {
     #[cfg(target_arch = "wasm32")]
@@ -76,8 +61,6 @@ pub fn location_href() -> Option<String> {
     }
 }
 
-/// Navigates to a new URL.
-/// No-op on the server.
 #[inline]
 pub fn navigate(url: &str) {
     #[cfg(target_arch = "wasm32")]
@@ -92,8 +75,6 @@ pub fn navigate(url: &str) {
     }
 }
 
-/// Gets the document element by ID.
-/// Returns None on the server.
 #[cfg(target_arch = "wasm32")]
 #[inline]
 pub fn get_element_by_id(id: &str) -> Option<web_sys::Element> {
@@ -102,8 +83,6 @@ pub fn get_element_by_id(id: &str) -> Option<web_sys::Element> {
         .and_then(|d| d.get_element_by_id(id))
 }
 
-/// Sets the inner HTML of an element by ID.
-/// No-op on the server.
 #[inline]
 pub fn set_inner_html(id: &str, html: &str) {
     #[cfg(target_arch = "wasm32")]
@@ -118,8 +97,6 @@ pub fn set_inner_html(id: &str, html: &str) {
     }
 }
 
-/// Gets the inner HTML of an element by ID.
-/// Returns None on the server.
 #[inline]
 pub fn get_inner_html(id: &str) -> Option<String> {
     #[cfg(target_arch = "wasm32")]

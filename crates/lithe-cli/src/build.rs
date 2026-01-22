@@ -13,6 +13,7 @@ pub fn handle_build(bin: bool, out_dir: &str) -> Result<()> {
     info!("Generating routes...");
 
     generate::generate_all(&project_dir, 3000)?;
+    sync_public_assets(&project_dir)?;
     build_wasm_unified(&project_dir)?;
 
     if bin {
@@ -43,7 +44,10 @@ pub fn build_wasm_unified(project_dir: &Path) -> Result<()> {
     info!("Found {} client functions", client_functions.len());
     wasm::generate_wasm_exports(project_dir, &client_functions)?;
     info!("Building unified WASM bundle for {}...", project_name);
-    let pkg_out_dir = project_dir.join("src/public/pkg");
+
+    let pkg_out_dir = project_dir.join(".lithe/public/pkg");
+    fs::create_dir_all(&pkg_out_dir)?;
+
     let status = Command::new("wasm-pack")
         .args([
             "build",
@@ -58,7 +62,32 @@ pub fn build_wasm_unified(project_dir: &Path) -> Result<()> {
     if !status.success() {
         anyhow::bail!("wasm-pack build failed");
     }
-    info!("WASM bundle built successfully to src/public/pkg");
+    info!("WASM bundle built successfully to .lithe/public/pkg");
+    Ok(())
+}
+
+pub fn sync_public_assets(project_dir: &Path) -> Result<()> {
+    let src_public = project_dir.join("src/public");
+    let lithe_public = project_dir.join(".lithe/public");
+
+    if src_public.exists() {
+        copy_dir_all(&src_public, &lithe_public)?;
+        info!("Synced src/public to .lithe/public");
+    }
+    Ok(())
+}
+
+fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> Result<()> {
+    fs::create_dir_all(&dst)?;
+    for entry in fs::read_dir(src)? {
+        let entry = entry?;
+        let ty = entry.file_type()?;
+        if ty.is_dir() {
+            copy_dir_all(entry.path(), dst.as_ref().join(entry.file_name()))?;
+        } else {
+            fs::copy(entry.path(), dst.as_ref().join(entry.file_name()))?;
+        }
+    }
     Ok(())
 }
 
@@ -74,11 +103,33 @@ fn build_binary(project_dir: &Path, out_dir: &str) -> Result<()> {
 
     if status.success() {
         fs::create_dir_all(out_dir)?;
-        let target_binary = project_dir.join("target/release/lithe-app");
+
+        // Find the binary. It might be in project_dir/target or workspace_root/target
+        let mut target_binary = project_dir.join("target/release/lithe-app");
+        if !target_binary.exists() {
+            // Try looking up for workspace target
+            if let Some(parent) = project_dir.parent() {
+                let workspace_target = parent.parent().unwrap().join("target/release/lithe-app");
+                if workspace_target.exists() {
+                    target_binary = workspace_target;
+                }
+            }
+        }
+
         let dest_binary = Path::new(out_dir).join("lithe-app");
         if target_binary.exists() {
             fs::copy(&target_binary, &dest_binary)?;
             info!("Binary written to {}", dest_binary.display());
+
+            // Copy assets as well
+            let src_public = project_dir.join(".lithe/public");
+            let dest_public = Path::new(out_dir).join(".lithe/public");
+            if src_public.exists() {
+                copy_dir_all(&src_public, &dest_public)?;
+                info!("Assets copied to {}", dest_public.display());
+            }
+        } else {
+            anyhow::bail!("Could not find built binary at {}", target_binary.display());
         }
     }
 
@@ -131,11 +182,11 @@ fn main() {{
     let out_dir = "{out_dir}";
     let _ = std::fs::remove_dir_all(out_dir);
 
-    let public_dir = std::path::Path::new("src/public");
+    let public_dir = std::path::Path::new(".lithe/public");
     if public_dir.exists() {{
         let dest = std::path::Path::new(out_dir).join("public");
         copy_dir_all(public_dir, dest).unwrap();
-        println!("Copied src/public to {{}}/public", out_dir);
+        println!("Copied .lithe/public to {{}}/public", out_dir);
     }}
     let routes = routes::routes();
     for route in routes {{

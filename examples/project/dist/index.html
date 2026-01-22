@@ -11,12 +11,10 @@
                             console.warn('WASM module not initialized');
                             return;
                         }
-                        // Try exact match first
                         if (window.wasm_module[name]) {
                             window.wasm_module[name]();
                             return;
                         }
-                        // Try to find a function ending with the name (for local functions)
                         const suffix = '_' + name;
                         for (const key of Object.keys(window.wasm_module)) {
                             if (key.endsWith(suffix) || key === name) {

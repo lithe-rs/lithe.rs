@@ -12,7 +12,7 @@ async fn handle_path(Path(path): Path<String>) -> Html<String> {
 #[tokio::main]
 async fn main() {
     let app = Router::new()
-        .nest_service("/public", ServeDir::new("src/public"))
+        .nest_service("/public", ServeDir::new(".lithe/public"))
         .route("/", get(handle_root))
         .route("/*path", get(handle_path));
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();

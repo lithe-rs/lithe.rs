@@ -9,11 +9,10 @@ pub fn handle_dev(port: u16) -> Result<()> {
     let project_dir = std::env::current_dir()?;
     info!("Generating routes and server code...");
 
-    // Generate all code first (including lib.rs needed for WASM build)
     generate::generate_all(&project_dir, port)?;
     ensure_cargo_bin_config(&project_dir)?;
+    build::sync_public_assets(&project_dir)?;
 
-    // Build WASM after lib.rs is generated
     if let Err(e) = build::build_wasm_unified(&project_dir) {
         warn!("WASM build failed: {}", e);
     }
@@ -34,10 +33,8 @@ pub fn ensure_cargo_bin_config(project_dir: &Path) -> Result<()> {
     let mut content = std::fs::read_to_string(&cargo_path).context("Failed to read Cargo.toml")?;
     let mut modified = false;
 
-    // Ensure [lib] section points to .lithe/lib.rs
     if !content.contains("path = \".lithe/lib.rs\"") {
         if content.contains("[lib]") {
-            // Update existing [lib] section
             let re = Regex::new(r#"\[lib\][^\[]*"#).unwrap();
             let lib_section = r#"[lib]
 path = ".lithe/lib.rs"
@@ -46,7 +43,6 @@ crate-type = ["cdylib", "rlib"]
 "#;
             content = re.replace(&content, lib_section).to_string();
         } else {
-            // Add [lib] section after [package]
             let lib_section = r#"
 [lib]
 path = ".lithe/lib.rs"
@@ -60,7 +56,6 @@ crate-type = ["cdylib", "rlib"]
         modified = true;
     }
 
-    // Ensure tower-http with fs feature is present
     if !content.contains("tower-http") || !content.contains("features = [\"fs\"]") {
         if content.contains("tower-http") {
             let re = Regex::new(r#"tower-http\s*=\s*".*""#).unwrap();
@@ -79,7 +74,6 @@ crate-type = ["cdylib", "rlib"]
         modified = true;
     }
 
-    // Ensure [[bin]] config exists
     if !content.contains("[[bin]]") || !content.contains("lithe-app") {
         let bin_config = r#"
 [[bin]]

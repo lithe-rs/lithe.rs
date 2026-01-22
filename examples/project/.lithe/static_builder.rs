@@ -5,11 +5,11 @@ fn main() {
     let out_dir = "dist";
     let _ = std::fs::remove_dir_all(out_dir);
 
-    let public_dir = std::path::Path::new("src/public");
+    let public_dir = std::path::Path::new(".lithe/public");
     if public_dir.exists() {
         let dest = std::path::Path::new(out_dir).join("public");
         copy_dir_all(public_dir, dest).unwrap();
-        println!("Copied src/public to {}/public", out_dir);
+        println!("Copied .lithe/public to {}/public", out_dir);
     }
     let routes = routes::routes();
     for route in routes {
