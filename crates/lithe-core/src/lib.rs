@@ -93,6 +93,8 @@ pub struct HtmlPage {
     pub title: String,
     pub body: Box<dyn Component>,
     pub styles: Vec<String>,
+    pub scripts: Vec<String>,
+    pub wasm_fragment: Option<String>,
 }
 
 impl HtmlPage {
@@ -101,6 +103,8 @@ impl HtmlPage {
             title: title.to_string(),
             body: Box::new(body),
             styles: Vec::new(),
+            scripts: Vec::new(),
+            wasm_fragment: None,
         }
     }
 
@@ -113,6 +117,15 @@ impl HtmlPage {
         let mut buf = String::new();
         self.render(&mut buf);
         buf
+    }
+
+    pub fn with_wasm_fragment(mut self, fragment: &str) -> Self {
+        self.wasm_fragment = Some(fragment.to_string());
+        self
+    }
+    pub fn add_script(mut self, js: &str) -> Self {
+        self.scripts.push(js.to_string());
+        self
     }
 }
 
@@ -131,6 +144,11 @@ impl Component for HtmlPage {
             buf.push_str("    <style>");
             buf.push_str(style);
             buf.push_str("</style>\n");
+        }
+        for script in &self.scripts {
+            buf.push_str("    <script>");
+            buf.push_str(script);
+            buf.push_str("</script>\n");
         }
 
         buf.push_str("</head>\n<body>\n    ");
