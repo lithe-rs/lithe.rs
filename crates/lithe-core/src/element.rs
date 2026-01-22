@@ -55,6 +55,30 @@ pub struct Element {
     children: Vec<Box<dyn Component>>,
 }
 
+pub trait OnClickArg {
+    fn to_js_string(self) -> String;
+}
+
+impl OnClickArg for &str {
+    fn to_js_string(self) -> String {
+        self.to_string()
+    }
+}
+
+impl OnClickArg for String {
+    fn to_js_string(self) -> String {
+        self
+    }
+}
+
+impl<F: Fn() + 'static> OnClickArg for F {
+    fn to_js_string(self) -> String {
+        // This is a placeholder. The #[page] macro will replace the function/closure
+        // with a string like "Lithe.dispatch('...')".
+        String::new()
+    }
+}
+
 impl Element {
     pub fn new(tag: &str) -> Self {
         Element {
@@ -100,8 +124,18 @@ impl Element {
     pub fn alt(self, alt: &str) -> Self {
         self.set_attribute("alt", alt)
     }
-    pub fn on_click(self, js: &str) -> Self {
-        self.set_attribute("onclick", js)
+
+    pub fn style(self, style: &str) -> Self {
+        self.set_attribute("style", style)
+    }
+
+    pub fn on_click<A: OnClickArg>(self, arg: A) -> Self {
+        let js = arg.to_js_string();
+        if js.is_empty() {
+            self
+        } else {
+            self.set_attribute("onclick", &js)
+        }
     }
 }
 

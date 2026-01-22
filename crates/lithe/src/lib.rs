@@ -1,6 +1,8 @@
 pub mod core {
     pub use lithe_core::*;
 }
+pub mod client;
+
 pub use lithe_core::*;
 pub use lithe_macros::{client, page};
 

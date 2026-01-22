@@ -7,3 +7,7 @@ edition = "2024"
 lithe-core = { path = "../lithe-core" }
 lithe-macros = { path = "../lithe-macros" }
 lithe-ui = { path = "../lithe-ui" }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+web-sys = { version = "0.3", features = ["Window", "Document", "Element", "Location", "console"] }
+wasm-bindgen = "0.2"

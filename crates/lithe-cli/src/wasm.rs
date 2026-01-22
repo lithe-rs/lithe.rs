@@ -34,7 +34,9 @@ fn scan_directory(dir: &Path, src_root: &Path, functions: &mut Vec<ClientFunctio
 fn scan_file(file_path: &Path, src_root: &Path, functions: &mut Vec<ClientFunction>) -> Result<()> {
     let content =
         fs::read_to_string(file_path).context(format!("Failed to read file: {:?}", file_path))?;
-    let re = Regex::new(r#"#\[client\]\s*pub\s+fn\s+(\w+)"#).context("Failed to compile regex")?;
+    // Match #[client] or #[lithe::client] followed by pub fn
+    let re = Regex::new(r#"#\[(?:[\w:]+::)?client\]\s*pub(?:\([^)]+\))?\s+fn\s+(\w+)"#)
+        .context("Failed to compile regex")?;
     let relative = file_path
         .strip_prefix(src_root)
         .context("File not under src root")?;

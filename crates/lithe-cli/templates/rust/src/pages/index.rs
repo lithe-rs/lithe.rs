@@ -1,5 +1,6 @@
 use lithe::{a, div, h1, p, Component};
 
+#[lithe::page]
 pub fn page() -> impl Component {
     div()
         .class("container")

@@ -620,6 +620,8 @@ dependencies = [
  "lithe-core",
  "lithe-macros",
  "lithe-ui",
+ "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]

@@ -1,3 +1,4 @@
+#[lithe::page]
 pub fn page() -> impl lithe::Component {
     lithe::div()
         .class("about-container")
