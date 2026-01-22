@@ -100,6 +100,9 @@ impl Element {
     pub fn alt(self, alt: &str) -> Self {
         self.set_attribute("alt", alt)
     }
+    pub fn on_click(self, js: &str) -> Self {
+        self.set_attribute("onclick", js)
+    }
 }
 
 impl Component for Element {
@@ -142,10 +145,6 @@ impl VoidElement {
 
     pub fn alt(self, alt: &str) -> Self {
         self.set_attribute("alt", alt)
-    }
-
-    pub fn on_click(self, js: &str) -> Self {
-        self.set_attribute("onclick", js)
     }
 
     pub fn charset(self, charset: &str) -> Self {

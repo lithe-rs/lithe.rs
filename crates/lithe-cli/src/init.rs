@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use dialoguer::{theme::ColorfulTheme, Confirm, Input, Select};
+use dialoguer::{Confirm, Input, Select, theme::ColorfulTheme};
 use indicatif::{ProgressBar, ProgressStyle};
 use log::{info, warn};
 use rust_embed::RustEmbed;
@@ -52,7 +52,6 @@ pub fn handle_init(default_project_dir: &str, default_template: &str) -> Result<
                 return Ok(());
             }
 
-            // Remove existing contents
             for entry in fs::read_dir(target_path)? {
                 let entry = entry?;
                 let path = entry.path();
