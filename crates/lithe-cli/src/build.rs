@@ -8,7 +8,7 @@ use crate::dev::ensure_cargo_bin_config;
 use crate::generate;
 use crate::wasm;
 
-pub fn handle_build(bin: bool, out_dir: &str) -> Result<()> {
+pub fn handle_build(static_site: bool, out_dir: &str) -> Result<()> {
     let project_dir = std::env::current_dir()?;
     info!("Generating routes...");
 
@@ -16,10 +16,10 @@ pub fn handle_build(bin: bool, out_dir: &str) -> Result<()> {
     sync_public_assets(&project_dir)?;
     build_wasm_unified(&project_dir)?;
 
-    if bin {
-        build_binary(&project_dir, out_dir)?;
-    } else {
+    if static_site {
         build_static_site(&project_dir, out_dir)?;
+    } else {
+        build_binary(&project_dir, out_dir)?;
     }
 
     Ok(())
@@ -119,15 +119,10 @@ fn build_binary(project_dir: &Path, out_dir: &str) -> Result<()> {
         let dest_binary = Path::new(out_dir).join("lithe-app");
         if target_binary.exists() {
             fs::copy(&target_binary, &dest_binary)?;
-            info!("Binary written to {}", dest_binary.display());
-
-            // Copy assets as well
-            let src_public = project_dir.join(".lithe/public");
-            let dest_public = Path::new(out_dir).join(".lithe/public");
-            if src_public.exists() {
-                copy_dir_all(&src_public, &dest_public)?;
-                info!("Assets copied to {}", dest_public.display());
-            }
+            info!(
+                "Binary written to {} (all assets embedded inside)",
+                dest_binary.display()
+            );
         } else {
             anyhow::bail!("Could not find built binary at {}", target_binary.display());
         }

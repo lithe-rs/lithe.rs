@@ -8,5 +8,4 @@ members = [
     "crates/lithe-ui",
     "examples/static-starter",
     "examples/project",
-    "examples/my-app",
 ]

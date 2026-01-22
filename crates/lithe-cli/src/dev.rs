@@ -85,6 +85,35 @@ path = ".lithe/main.rs"
         info!("Added [[bin]] configuration to Cargo.toml");
     }
 
+    if !content.contains("serde =") {
+        content = content.replace(
+            "[dependencies]",
+            "[dependencies]\nserde = { version = \"1.0\", features = [\"derive\"] }\nserde_json = \"1.0\"\nrust-embed = \"8.0\"\nmime_guess = \"2.0\"",
+        );
+        modified = true;
+    } else if !content.contains("rust-embed =") {
+        content = content.replace(
+            "serde_json = \"1.0\"",
+            "serde_json = \"1.0\"\nrust-embed = \"8.0\"\nmime_guess = \"2.0\"",
+        );
+        modified = true;
+    }
+
+    if !content.contains("wasm-bindgen-futures") {
+        if content.contains("[target.'cfg(target_arch = \"wasm32\")'.dependencies]") {
+            content = content.replace(
+                "[target.'cfg(target_arch = \"wasm32\")'.dependencies]",
+                "[target.'cfg(target_arch = \"wasm32\")'.dependencies]\nwasm-bindgen-futures = \"0.4\"",
+            );
+        } else {
+            content = format!(
+                "{}\n[target.'cfg(target_arch = \"wasm32\")'.dependencies]\nwasm-bindgen-futures = \"0.4\"\n",
+                content
+            );
+        }
+        modified = true;
+    }
+
     if modified {
         std::fs::write(&cargo_path, content).context("Failed to update Cargo.toml")?;
     }

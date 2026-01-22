@@ -6,6 +6,7 @@ mod build;
 mod dev;
 mod generate;
 mod init;
+mod server;
 mod wasm;
 
 #[derive(Serialize, Deserialize)]
@@ -49,10 +50,10 @@ enum Commands {
     },
     #[command(about = "Builds the project for production")]
     Build {
-        #[arg(short, long, help = "Build a standalone embedded binary")]
-        bin: bool,
         #[arg(short, long, help = "Output directory", default_value = "dist")]
         out_dir: String,
+        #[arg(long, help = "Build as a static site only")]
+        static_site: bool,
     },
 }
 
@@ -80,8 +81,11 @@ fn main() -> Result<()> {
         Commands::Dev { port } => {
             dev::handle_dev(port)?;
         }
-        Commands::Build { bin, out_dir } => {
-            build::handle_build(bin, &out_dir)?;
+        Commands::Build {
+            static_site,
+            out_dir,
+        } => {
+            build::handle_build(static_site, &out_dir)?;
         }
     }
 

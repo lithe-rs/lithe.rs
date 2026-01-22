@@ -1,6 +1,9 @@
 pub mod element;
+pub mod rpc;
 
 pub use element::*;
+pub use serde;
+pub use serde_json;
 pub trait Component {
     fn render(&self, buf: &mut String);
 }

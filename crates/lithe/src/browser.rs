@@ -109,3 +109,55 @@ pub fn get_inner_html(id: &str) -> Option<String> {
         None
     }
 }
+
+pub async fn call_server<Args, Ret>(fn_name: &str, args: Args) -> Ret
+where
+    Args: serde::Serialize,
+    Ret: serde::de::DeserializeOwned,
+{
+    #[cfg(target_arch = "wasm32")]
+    {
+        use crate::rpc::{RpcRequest, RpcResponse};
+        use wasm_bindgen::JsCast;
+        use web_sys::{Request, RequestInit, RequestMode, Response};
+
+        let args_value = serde_json::to_value(args).unwrap();
+        let rpc_req = RpcRequest {
+            function: fn_name.to_string(),
+            args: args_value,
+        };
+        let body = serde_json::to_string(&rpc_req).unwrap();
+
+        let opts = RequestInit::new();
+        opts.set_method("POST");
+        opts.set_mode(RequestMode::Cors);
+        opts.set_body(&js_sys::JsString::from(body));
+
+        let request = Request::new_with_str_and_init("/api/lithe-rpc", &opts).unwrap();
+        request
+            .headers()
+            .set("Content-Type", "application/json")
+            .unwrap();
+
+        let window = web_sys::window().unwrap();
+        let resp_value = wasm_bindgen_futures::JsFuture::from(window.fetch_with_request(&request))
+            .await
+            .unwrap();
+        let resp: Response = resp_value.dyn_into().unwrap();
+
+        let text = wasm_bindgen_futures::JsFuture::from(resp.text().unwrap())
+            .await
+            .unwrap()
+            .as_string()
+            .unwrap();
+        let rpc_res: RpcResponse =
+            serde_json::from_str(&text).expect("Failed to parse RPC response");
+
+        serde_json::from_value(rpc_res.result).expect("Failed to deserialize result")
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let _ = (fn_name, args);
+        unreachable!("call_server should only be called from WASM")
+    }
+}

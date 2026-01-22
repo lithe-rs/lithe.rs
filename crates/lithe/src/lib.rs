@@ -1,10 +1,15 @@
 pub mod core {
     pub use lithe_core::*;
 }
-pub mod client;
+pub mod browser;
 
 pub use lithe_core::*;
-pub use lithe_macros::{client, page};
+pub use lithe_macros::{client, page, server};
+
+#[cfg(target_arch = "wasm32")]
+pub use wasm_bindgen;
+#[cfg(target_arch = "wasm32")]
+pub use wasm_bindgen_futures;
 
 pub fn render_page<C: Component + 'static>(comp: C, app_name: &str) -> String {
     let mut s = render_to_string(&comp);

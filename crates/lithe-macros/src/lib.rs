@@ -3,16 +3,89 @@ use quote::quote;
 use syn::{
     parse_macro_input, parse_quote,
     visit_mut::{self, VisitMut},
-    Block, Expr, ExprMethodCall, ExprPath, ItemFn,
+    Block, Expr, ExprMethodCall, ExprPath, FnArg, ItemFn, Pat, ReturnType,
 };
 
 #[proc_macro_attribute]
 pub fn client(_attr: TokenStream, item: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(item as ItemFn);
+    let input_fn = parse_macro_input!(item as ItemFn);
     let expanded = quote! {
         #[allow(dead_code)]
-        #input
+        #input_fn
     };
+    TokenStream::from(expanded)
+}
+
+#[proc_macro_attribute]
+pub fn server(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    let input_fn = parse_macro_input!(item as ItemFn);
+    let fn_name = &input_fn.sig.ident;
+    let visibility = &input_fn.vis;
+    let inputs = &input_fn.sig.inputs;
+    let output = &input_fn.sig.output;
+
+    // Extract argument names and types
+    let mut arg_names = Vec::new();
+    let mut arg_types = Vec::new();
+
+    for arg in inputs {
+        if let FnArg::Typed(pat_type) = arg {
+            if let Pat::Ident(pat_ident) = &*pat_type.pat {
+                arg_names.push(&pat_ident.ident);
+                arg_types.push(&pat_type.ty);
+            }
+        }
+    }
+
+    let args_tuple_type = if arg_types.len() == 1 {
+        let ty = &arg_types[0];
+        quote! { #ty }
+    } else {
+        quote! { (#(#arg_types),*) }
+    };
+
+    let args_unpack = if arg_names.len() == 1 {
+        let name = &arg_names[0];
+        quote! { let #name = args; }
+    } else {
+        quote! { let (#(#arg_names),*) = args; }
+    };
+
+    let internal_fn_name = syn::Ident::new(
+        &format!("__lithe_rpc_{}", fn_name),
+        proc_macro2::Span::call_site(),
+    );
+
+    let fn_name_str = fn_name.to_string();
+
+    let output_type = match output {
+        ReturnType::Default => quote! { () },
+        ReturnType::Type(_, ty) => quote! { #ty },
+    };
+
+    let expanded = quote! {
+        #[cfg(not(target_arch = "wasm32"))]
+        #input_fn
+
+        #[cfg(not(target_arch = "wasm32"))]
+        #[allow(dead_code)]
+        pub async fn #internal_fn_name(args: #args_tuple_type) -> ::lithe::serde_json::Value {
+            // Compile-time check for Serialize
+            fn _check_serialize<T: ::lithe::serde::Serialize>() {}
+            _check_serialize::<#output_type>();
+
+            #args_unpack
+            let res = #fn_name(#(#arg_names),*).await;
+            ::lithe::serde_json::to_value(res).expect("Failed to serialize RPC result")
+        }
+
+        #[cfg(target_arch = "wasm32")]
+        #[allow(dead_code)]
+        #visibility async fn #fn_name(#inputs) #output {
+            ::lithe::browser::call_server(#fn_name_str, (#(#arg_names),*)).await
+        }
+    };
+
     TokenStream::from(expanded)
 }
 
@@ -51,18 +124,20 @@ impl VisitMut for OnClickVisitor {
                     let handler_ident =
                         syn::Ident::new(&handler_name, proc_macro2::Span::call_site());
 
-                    let block: Block = if let Expr::Block(b) = &*closure.body {
-                        b.block.clone()
-                    } else {
-                        let body = &closure.body;
-                        parse_quote!({ #body })
+                    let body = &closure.body;
+                    let block: Block = match &**body {
+                        Expr::Block(b) => b.block.clone(),
+                        Expr::Async(a) => a.block.clone(),
+                        _ => parse_quote!({ #body }),
                     };
 
                     let anon_fn: ItemFn = parse_quote! {
                         #[cfg(target_arch = "wasm32")]
-                        #[wasm_bindgen::prelude::wasm_bindgen(js_name = #handler_name)]
+                        #[::lithe::wasm_bindgen::prelude::wasm_bindgen(js_name = #handler_name)]
                         pub fn #handler_ident() {
-                            #block
+                            ::lithe::wasm_bindgen_futures::spawn_local(async move {
+                                #block
+                            });
                         }
                     };
 
@@ -80,8 +155,8 @@ impl VisitMut for OnClickVisitor {
 
 #[proc_macro_attribute]
 pub fn page(_attr: TokenStream, item: TokenStream) -> TokenStream {
-    let mut input = parse_macro_input!(item as ItemFn);
-    let base_name = input.sig.ident.to_string();
+    let mut input_fn = parse_macro_input!(item as ItemFn);
+    let base_name = input_fn.sig.ident.to_string();
 
     let mut visitor = OnClickVisitor {
         anon_handlers: Vec::new(),
@@ -89,12 +164,12 @@ pub fn page(_attr: TokenStream, item: TokenStream) -> TokenStream {
         count: 0,
     };
 
-    visitor.visit_item_fn_mut(&mut input);
+    visitor.visit_item_fn_mut(&mut input_fn);
 
     let anon_fns = visitor.anon_handlers;
 
     let expanded = quote! {
-        #input
+        #input_fn
         #(#anon_fns)*
     };
     TokenStream::from(expanded)
